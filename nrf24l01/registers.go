@@ -32,7 +32,7 @@ const (
 	PWR_UP           = 1
 	PRIM_RX          = 0
 
-	EN_AA      byte = 0x01 // Register address
+	EN_AA      byte = 0x01
 	EN_AA_MASK byte = 0b0011_1111
 	ENAA_P5         = 5
 	ENAA_P4         = 4
