@@ -1,31 +1,33 @@
 package ssd1306
 
 import (
-	"machine"
 	"time"
 
 	"tinygo.org/x/drivers"
+	"tinygo.org/x/drivers/internal/legacy"
+	"tinygo.org/x/drivers/internal/pin"
 )
 
 type SPIBus struct {
 	wire     drivers.SPI
-	dcPin    machine.Pin
-	resetPin machine.Pin
-	csPin    machine.Pin
+	dcPin    pin.OutputFunc
+	resetPin pin.OutputFunc
+	csPin    pin.OutputFunc
 	buffer   []byte // buffer to avoid heap allocations
 }
 
 // NewSPI creates a new SSD1306 connection. The SPI wire must already be configured.
-func NewSPI(bus drivers.SPI, dcPin, resetPin, csPin machine.Pin) *Device {
-	dcPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
-	resetPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
-	csPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
+func NewSPI(bus drivers.SPI, dcPin, resetPin, csPin pin.Output) *Device {
+	// configure GPIO pins (on baremetal targets only, for backwards compatibility)
+	legacy.ConfigurePinOut(dcPin)
+	legacy.ConfigurePinOut(resetPin)
+	legacy.ConfigurePinOut(csPin)
 	return &Device{
 		bus: &SPIBus{
 			wire:     bus,
-			dcPin:    dcPin,
-			resetPin: resetPin,
-			csPin:    csPin,
+			dcPin:    dcPin.Set,
+			resetPin: resetPin.Set,
+			csPin:    csPin.Set,
 		},
 	}
 }
@@ -60,7 +62,7 @@ func (b *SPIBus) flush() error {
 // tx sends data to the display
 func (b *SPIBus) tx(data []byte, isCommand bool) error {
 	b.csPin.High()
-	b.dcPin.Set(!isCommand)
+	b.dcPin(!isCommand)
 	b.csPin.Low()
 	err := b.wire.Tx(data, nil)
 	b.csPin.High()
